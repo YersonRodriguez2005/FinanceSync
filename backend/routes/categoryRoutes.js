@@ -1,0 +1,12 @@
+// routes/categoryRoutes.js
+const express = require('express');
+const router = express.Router();
+const { getCategories, createCategory, deleteCategory } = require('../controllers/categoryController');
+const { protect } = require('../middlewares/authMiddleware');
+
+// Todas estas rutas requieren el token JWT
+router.get('/', protect, getCategories);
+router.post('/', protect, createCategory);
+router.delete('/:id', protect, deleteCategory);
+
+module.exports = router;

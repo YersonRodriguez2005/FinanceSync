@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/* --- 1. CONFIGURACIÓN DEL TEMA (TAILWIND V4) --- */
+@theme {
+  /* Paleta Exclusiva: FinanceSync */
+  --color-brand: #00D09C;
+  --color-brand-dark: #00A67D;
+  --color-navy: #1A233A;
+  --color-background: #F0F4F8;
+  --color-surface: #FFFFFF;
+  --color-text-muted: #64748B;
+  
+  /* Financieros */
+  --color-income: #10B981;
+  --color-expense: #F43F5E;
+
+  /* Soft UI Ultra Refinado */
+  --shadow-soft: 8px 8px 16px #dce1e6, -8px -8px 16px #ffffff;
+  --shadow-soft-inset: inset 6px 6px 12px #dce1e6, inset -6px -6px 12px #ffffff;
+  --shadow-glass: 0 8px 32px 0 rgba(26, 35, 58, 0.1);
+
+  /* Backdrop Blur */
+  --blur-glass: 16px;
+
+  /* Animaciones y Keyframes */
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-up: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-pulse-slow: pulse-slow 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes slide-up {
+    0% { transform: translateY(30px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+}
+
+/* --- 2. ESTILOS BASE --- */
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-navy);
+    font-smooth: antialiased;
+  }
+}
+
+/* --- 3. CLASES DE UTILIDAD PERSONALIZADAS --- */
+@utility glass-panel {
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-glass);
+  border-radius: 1.5rem; /* rounded-3xl equivalente */
+}
+
+@utility soft-button {
+  background-color: var(--color-background);
+  box-shadow: var(--shadow-soft);
+  border-radius: 0.75rem; /* rounded-xl */
+  transition: box-shadow 200ms ease-in-out;
+
+  &:active {
+    box-shadow: var(--shadow-soft-inset);
+  }
+}
