@@ -3,7 +3,11 @@ import axios from 'axios';
 
 // Creamos una instancia maestra de Axios
 const api = axios.create({
-    baseURL: 'http://localhost:4000/api',
+    //conexion con backend local
+    // baseURL: 'http://localhost:4000/api',
+
+    //conexion con backend en producción
+    baseURL: 'https://financesync-0lli.onrender.com/api',
     timeout: 10000,
 });
 
