@@ -6,6 +6,11 @@ import {
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip as PieTooltip,
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as LineTooltip, Legend
 } from 'recharts';
+import toast from 'react-hot-toast'; 
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
+
 import { getDashboardSummary } from '../services/dashboardService';
 import { downloadExtractPDF } from '../services/reportService';
 import { BottomNav } from '../components/BottomNav';
@@ -39,19 +44,65 @@ export const Reports = () => {
     const handlePrevMonth = () => setCurrentDate(new Date(currentYear, currentDate.getMonth() - 1, 1));
     const handleNextMonth = () => setCurrentDate(new Date(currentYear, currentDate.getMonth() + 1, 1));
 
+    // Función auxiliar para convertir Blob a Base64 de forma limpia
+    const blobToBase64 = (blob) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64data = reader.result;
+                resolve(base64data.split(',')[1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    };
+
+    // LÓGICA DE DESCARGA MULTIPLATAFORMA (Web + Android/iOS)
     const handleDownload = async () => {
         try {
             setIsDownloading(true);
+            toast.loading('Generando extracto...', { id: 'pdf-toast' });
+
+            // Obtenemos el PDF desde el backend
             const blob = await downloadExtractPDF(currentMonth, currentYear);
-            const url = window.URL.createObjectURL(new Blob([blob]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `FinanceSync_Extracto_${currentMonth}_${currentYear}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch {
-            alert('Error al descargar el extracto.');
+
+            if (Capacitor.isNativePlatform()) {
+                // 📱 LÓGICA PARA EL CELULAR (APK)
+                const base64 = await blobToBase64(blob);
+                const fileName = `FinanceSync_Extracto_${currentMonth}_${currentYear}.pdf`;
+
+                // Escribimos en caché temporal
+                const savedFile = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64,
+                    directory: Directory.Cache
+                });
+
+                toast.success('¡Extracto listo!', { id: 'pdf-toast' });
+
+                // Abrimos el menú nativo para compartir/guardar
+                await Share.share({
+                    title: `Extracto ${monthName}`,
+                    text: `Aquí tienes tu extracto del mes de ${monthName}.`,
+                    url: savedFile.uri,
+                    dialogTitle: 'Guardar o Compartir Extracto'
+                });
+
+            } else {
+                // LÓGICA PARA EL NAVEGADOR WEB (PC)
+                const url = window.URL.createObjectURL(new Blob([blob]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `FinanceSync_Extracto_${currentMonth}_${currentYear}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                
+                toast.success('Descarga iniciada', { id: 'pdf-toast' });
+            }
+        } catch (error) {
+            console.error('Error al procesar PDF:', error);
+            toast.error('Error al descargar el extracto.', { id: 'pdf-toast' });
         } finally {
             setIsDownloading(false);
         }
@@ -63,10 +114,7 @@ export const Reports = () => {
             {chartData.map((entry, index) => (
                 <div key={`legend-${index}`} className="flex justify-between items-center bg-background/50 p-2 rounded-xl border border-white/50">
                     <div className="flex items-center gap-3">
-                        {/* El puntito de color */}
                         <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-
-                        {/* 🟢 EL FIX: Buscamos ambos posibles nombres de la base de datos */}
                         <span className="text-navy font-bold text-sm uppercase">
                             {entry.category_name || entry.name || 'Sin Categoría'}
                         </span>
@@ -81,7 +129,7 @@ export const Reports = () => {
 
     return (
         <div className="min-h-screen bg-background pb-28 pt-8 relative overflow-hidden animate-fade-in">
-            <div className="absolute top-0 left-0 w-full h-180 bg-linear-to-b from-brand to-transparent z-0 pointer-events-none"></div>
+            <div className="absolute top-0 left-0 w-full h-180 bg-gradient-to-b from-brand to-transparent z-0 pointer-events-none"></div>
 
             <div className="relative z-10 px-6">
 
@@ -147,12 +195,12 @@ export const Reports = () => {
                             {renderCustomLegend()}
                         </div>
 
-                        {/* 2. NUEVO: Gráfico de Líneas (Tendencia Ingresos vs Gastos) */}
+                        {/* 2. Gráfico de Líneas (Tendencia Ingresos vs Gastos) */}
                         <div className="bg-surface/80 backdrop-blur-glass border border-white/50 shadow-glass rounded-3xl p-6 mb-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
                             <h3 className="text-navy font-extrabold mb-2">Flujo de Caja Mensual</h3>
                             <p className="text-xs text-textMuted mb-6">Comparativa de ingresos frente a gastos por día.</p>
 
-                            <div className="h-64 w-full -ml-4"> {/* Margen negativo para compensar el eje Y */}
+                            <div className="h-64 w-full -ml-4"> 
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={trendData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -168,7 +216,7 @@ export const Reports = () => {
                                             axisLine={false}
                                             tickLine={false}
                                             tick={{ fontSize: 10, fill: '#64748B' }}
-                                            tickFormatter={(val) => `$${(val / 1000)}k`} // Formateo para que no ocupe tanto espacio
+                                            tickFormatter={(val) => `$${(val / 1000)}k`} 
                                         />
                                         <LineTooltip
                                             formatter={(value) => `$${parseFloat(value).toLocaleString('es-CO')}`}
@@ -179,7 +227,7 @@ export const Reports = () => {
 
                                         {/* Línea Verde: Ingresos */}
                                         <Line
-                                            type="monotone" // Esto hace que la línea sea curva y suave
+                                            type="monotone" 
                                             dataKey="income"
                                             name="Ingresos"
                                             stroke="var(--color-brand)"

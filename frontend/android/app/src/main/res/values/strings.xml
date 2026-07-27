@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FinanceSync</string>
+    <string name="title_activity_main">FinanceSync</string>
+    <string name="package_name">com.financesync.app</string>
+    <string name="custom_url_scheme">com.financesync.app</string>
+</resources>
